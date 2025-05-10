@@ -1,0 +1,304 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[romanian]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{xcolor}
+\setlength{\parindent}{1em} 
+\geometry{margin=2.5cm}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    numbers=left,
+    stepnumber=1,
+    numbersep=5pt,
+    breaklines=true,               
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}},  
+    captionpos=b,            
+    frame=single,                  
+}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+
+
+
+\title{\textbf{Soluționarea Problemei SAT}}
+\author{
+  Părăianu-Lugojan Ariana \\
+  Universitatea de Vest Timișoara \\
+  Facultatea de Matematică și Informatică \\
+  \date{11 Mai, 2025}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Lucrarea abordează problema satisfiabilității în logica propozițională, cunoscută sub denumirea de SAT (Satisfiability). În cadrul acestei lucrări, am discutat atât despre istoria metodei SAT, cât și despre tehnicile și algoritmii utilizați pentru rezolvarea acesteia. SAT reprezintă o problemă fundamentală în informatică, având aplicații semnificative în domenii precum inteligența artificială, verificarea formală a software-ului și hardware-ului, precum și în criptografie.
+\vspace{1em}
+
+În prima parte a lucrării, am oferit o introducere generală în problema satisfiabilității și am prezentat o scurtă istorie a dezvoltării tehnicilor de rezolvare a acesteia. S-a subliniat importanța metodei DPLL (Davis-Putnam-Logemann-Loveland), care a marcat un pas semnificativ în abordarea SAT-ului și care continuă să fie una dintre cele mai utilizate metode pentru rezolvarea problemelor SAT.
+\vspace{1em}
+
+Următorul capitol a fost dedicat analizei unui cod implementat în Python, în care am prezentat pașii esențiali ai algoritmilor DPLL, DP și rezoluția, și am explicat cum aceștia sunt utilizați pentru a determina satisfiabilitatea unei formule logice. În cadrul acestei secțiuni, am descris funcțiile de propagare a unității, selecția variabilelor și căutarea recursivă, explicând în detaliu fiecare pas al algoritmului.
+\vspace{1em}
+
+În continuare, am analizat diverse metode alternative pentru rezolvarea problemei SAT, cum ar fi algoritmii stocastici și aleatorii, algoritmii evolutivi și metaheuristici, metodele bazate pe programare liniară mixtă și satisfiabilitatea modulo teorii (SMT), precum și abordările bazate pe conflict-driven clause learning (CDCL). Fiecare dintre aceste metode a fost detaliată în termeni de principiu și aplicații, subliniind avantajele și limitările acestora.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\vspace{4em}
+\section*{Declarație de originalitate}
+Declar pe propria răspundere că acest proiect reprezintă rezultatul muncii mele personale și reflectă ideile și contribuțiile originale ale mele. Toate sursele folosite sunt corect citate conform normelor academice, iar, în cazul în care este necesar, sunt disponibilă să ofer clarificări suplimentare. Confirm că acest proiect nu a fost utilizat anterior în alte scopuri și îmi asum întreaga responsabilitate pentru autenticitatea sa.
+\newpage
+
+\section{Introducere}
+\hspace*{\parindent}Problema SAT (Satisfiability Problem) reprezintă o problemă fundamentală în domeniul logicii booleene și al informaticii, având aplicații esențiale în multe domenii ale științei și tehnologiei. Problema SAT constă în determinarea satisfiabilității unei formule booleene, adică verificarea dacă există o asignare a valorilor de adevăr pentru variabilele booleene care face ca formula să fie adevărată. Formulele booleene sunt folosite pentru a reprezenta expresii logice care pot fi adevărate sau false, și sunt larg utilizate în calculul automat și teoria calculabilității.
+\vspace{1em}
+
+Problema SAT a fost primul exemplu de problemă NP-completă, așa cum a fost demonstrat de Stephen Cook în 1971, ceea ce înseamnă că, în general, nu există algoritmi eficienți care să poată rezolva toate instanțele acestei probleme într-un timp polinomial. Acesta este motivul pentru care studiul și dezvoltarea unor algoritmi eficienți pentru rezolvarea SAT-ului reprezintă o provocare continuă în domeniul informaticii teoretice și al inteligenței artificiale. De-a lungul decadelor, s-au dezvoltat multiple tehnici pentru a aborda problema, fiecare având avantaje și limitări în funcție de complexitatea formulelor booleene și de tipologia instanțelor de test.
+\vspace{1em}
+
+În această lucrare, ne concentrăm pe trei dintre cele mai cunoscute și utilizate metode pentru rezolvarea problemei SAT: metoda Davis-Putnam (DP), metoda Davis-Putnam-Logemann-Loveland (DPLL) și metoda rezoluției. Fiecare dintre aceste metode oferă o abordare diferită pentru a determina dacă o formulă booleană este satisfiabilă sau nu.
+
+
+\subsection{Istorie și Detalii}
+\hspace*{\parindent}Metoda Davis-Putnam, propusă în 1960 de Martin Davis și Hilary Putnam, este o abordare de căutare exhaustivă, care presupune eliminarea literaliilor din formule printr-o serie de pași logici, până când se ajunge la o formă simplificată a problemei. Aceasta este o metodă relativ simplă din punct de vedere conceptual, dar care, din păcate, poate fi ineficientă în cazul formulelor de mari dimensiuni, datorită numărului mare de combinații ce trebuie verificate.
+\vspace{1em}
+
+Metoda DPLL este o îmbunătățire semnificativă a metodei Davis-Putnam și a fost propusă în 1962 de Martin Davis, George Logemann și Donald Loveland. DPLL introduce tehnici de backtracking și heuristici pentru a optimiza procesul de căutare, reducând semnificativ numărul de combinații posibile care trebuie verificate. De asemenea, DPLL este baza pentru majoritatea algoritmilor moderni de satisfiabilitate, fiind extrem de eficientă în rezolvarea problemelor SAT de dimensiuni mari.
+\vspace{1em}
+
+Metoda rezoluției este o tehnică de inferență logică utilizată pentru a combina clauzele booleene într-o manieră sistematică, obținând noi clauze prin eliminarea literaliilor contradictorii. Rezoluția este un algoritm bazat pe reguli logice care ajută la reducerea dimensiunii problemei prin aplicarea unor transformări logice până când se ajunge la o contradicție (care indică nesatisfiabilitatea) sau la satisfacerea formulei. Deși este eficient pentru anumite tipuri de formule, metoda rezoluției poate fi, de asemenea, costisitoare din punct de vedere al complexității calculului, în funcție de dimensiunea și structura formulelor implicate.
+\vspace{1em}
+
+În lucrarea de față, vom analiza fiecare dintre aceste metode, descriind principiile lor de funcționare și implementându-le în limbajul de programare Python. Vom explora avantajele și dezavantajele fiecărei metode, în funcție de tipologia problemelor SAT, și vom compara performanțele acestora utilizând instanțe de test cu niveluri diferite de complexitate. De asemenea, vom discuta aplicațiile practice ale acestor tehnici în domenii precum verificarea circuitelor digitale, planificarea automată și inteligența artificială, în care SAT-ul joacă un rol crucial în soluționarea problemelor de satisfacabilitate.
+
+
+\section{Rezolvarea în Python a satisfiabilității}
+\hspace*{\parindent}În cadrul prezentei lucrări, ne propunem să analizăm detaliat implementarea unui algoritm destinat rezolvării problemei satisfiabilității (SAT) în limbajul de programare Python. Această abordare va include o descriere a structurii și funcționării codului, precum și a metodologiilor utilizate pentru a determina satisfiabilitatea formulării booleene. Pentru a facilita accesul la resursele necesare, link-ul către codul sursă relevant este disponibil mai jos.
+\url{https://github.com/arianaparaianu/SatisfiabilitateMpi}
+\vspace{1em}
+\subsection{DP (Davis Putnam)}
+\hspace*{\parindent}În această secțiune, vom analiza linie cu linie implementarea algoritmului Davis-Putnam (DP) pentru rezolvarea problemei satisfiabilității (SAT) într-o formulă booleană exprimată în Formă Normală Conjunctivă (CNF). Algoritmul DP este o metodă clasică de rezolvare a problemelor SAT, iar scopul acestei funcții este de a determina dacă există o atribuire a valorilor de adevăr care face ca formula să fie adevărată. Dacă există o astfel de atribuire, formula este satisfiabilă, iar algoritmul va returna True. Dacă nu, va returna False.
+\vspace{1em}
+
+Primul pas al funcției presupune crearea unei copii a listei CNF, în care fiecare clauză este copiată individual. Aceasta este o practică esențială, pentru a evita modificarea directă a listei inițiale și pentru a păstra datele originale intacte pe parcursul execuției. Acesta este un tip de copiere „adâncă”, astfel încât modificările efectuate asupra clauzelor să nu afecteze structura inițială.
+\vspace{1em}
+
+Algoritmul continuă printr-o buclă care va rula atâta timp cât există clauze în lista CNF. Fiecare iterație a buclei reprezintă o etapă în procesul de rezolvare a satisfiabilității. În cadrul fiecărei iterații, se va alege o variabilă \texttt{var} pe care să o analizeze. Variabila este aleasă prin examinarea primei clauze din lista CNF, și anume se ia valoarea absolută a primului literar din aceasta.
+\vspace{1em}
+
+Odată ce variabila este aleasă, următorul pas este să identificăm toate clauzele din CNF care conțin această variabilă și, respectiv, pe cele care conțin negarea sa. Aceste clauze sunt stocate separat: una pentru clauzele care conțin variabila pozitivă (\texttt{pos}), și alta pentru clauzele care conțin variabila negativă (\texttt{neg}). Acest pas este esențial deoarece algoritmul de rezolvare a SAT presupune combinarea acestor clauze pentru a produce noi clauze „rezolvate”, care pot reduce complexitatea formulei.
+\vspace{1em}
+
+Odată ce clauzele pozitive și negative au fost identificate, algoritmul trece la generarea „rezolvărilor” (adică noilor clauze), care sunt combinate din clauzele pozitive și negative. Pentru fiecare pereche de clauze \texttt{c1} din lista \texttt{pos} și \texttt{c2} din lista \texttt{neg}, se produce o nouă clauză \texttt{res} prin combinarea literalelor din cele două clauze, eliminând variabila aleasă și respectiv negarea sa.
+\vspace{1em}
+
+Este important de menționat că, înainte de a adăuga această clauză \texttt{res} la lista de clauze rezolvate, se verifică dacă aceasta conține o contradicție internă, adică dacă există un literal și negarea sa în aceeași clauză. Dacă o astfel de contradicție este găsită, rezolvarea este abandonată, iar algoritmul continuă cu următoarea pereche de clauze. În cazul în care clauza \texttt{res} este goală (adică nu mai conține niciun literal), acest lucru înseamnă că formula este insatisfiabilă, iar funcția va returna False.
+\vspace{1em}
+
+După generarea tuturor rezolvărilor posibile, se elimină din lista CNF toate clauzele care conțin variabila aleasă și negarea sa, deoarece acestea sunt considerate „rezolvate”. Aceste clauze nu mai sunt necesare în procesul de rezolvare și, prin urmare, sunt eliminate. În locul lor, sunt adăugate clauzele rezolvate obținute anterior.
+\vspace{1em}
+
+Procesul de alegere a unei variabile și combinare a clauzelor continuă până când nu mai există clauze de procesat în lista CNF. La sfârșitul buclei, dacă nu au fost întâlnite contradicții sau clauze goale, acest lucru înseamnă că formula este satisfiabilă și algoritmul returnează True.
+\vspace{1em}
+
+\begin{lstlisting}[language=Python, caption={Implementarea algoritmului Davis-Putnam}]
+from typing import List, Set
+
+Clause = Set[int]
+CNF = List[Clause]
+
+def dp(cnf: CNF) -> bool: 
+    cnf = [c.copy() for c in cnf]
+    while cnf:
+        var = abs(next(iter(cnf[0])))
+        pos = [c for c in cnf if  var in c]
+        neg = [c for c in cnf if -var in c]
+        resolvents: list[Clause] = []
+        for c1 in pos:
+            for c2 in neg:
+                res = (c1 - { var}) | (c2 - {-var})
+                if any(l in res and -l in res for l in res):
+                    continue
+                if not res:
+                    return False
+                resolvents.append(res)
+        cnf = [c for c in cnf if var not in c and -var not in c]
+        cnf.extend(resolvents)
+    return True
+\end{lstlisting}
+
+\subsection{DPLL}
+\hspace*{\parindent}Funcția \texttt{\_unit\_propagate} are rolul de a face propagare de unitate într-o formulă booleană exprimată în forma normală conjunctivă, adică o listă de clauze în care fiecare clauză este o mulțime de literali. Propagarea de unitate înseamnă că dacă într-o clauză rămâne un singur literal neatribuit, atunci acel literal trebuie să fie adevărat pentru ca formula să rămână satisfiabilă. Procesul începe presupunând că s-au făcut modificări și astfel se intră într-o buclă repetitivă. Pentru fiecare clauză, se extrag literalii care nu au fost încă evaluați, iar dacă toți literalii sunt deja atribuiți și niciunul nu face clauza adevărată, atunci formula este deja falsificată și se returnează un rezultat negativ. Dacă într-o clauză există exact un literal neatribuit, atunci acest literal este forțat să fie adevărat pentru a păstra clauza satisfiabilă și i se atribuie o valoare în dicționarul de asignări. Se modifică apoi formula prin eliminarea clauzelor satisfăcute de acest literal și prin eliminarea opusului său din restul clauzelor, după care se repetă procesul. Dacă nu se mai pot face modificări, se încheie și se returnează formula simplificată împreună cu un rezultat pozitiv, ceea ce înseamnă că nu s-a detectat niciun conflict.
+\vspace{1em}
+
+Funcția \texttt{\_pick\_var\_moms} este responsabilă cu alegerea unei variabile neatribuite pe care algoritmul o va încerca mai departe. Se caută mai întâi variabilele care apar cel mai frecvent în clauzele de lungime doi, întrucât acestea sunt cele mai critice și mai restrictive. Dacă există astfel de variabile, se alege cea cu frecvența cea mai mare pentru a maximiza șansa de a simplifica formula. Dacă nu se găsește nimic în clauzele de lungime doi, se analizează întreaga formulă pentru a găsi variabila neatribuită care apare cel mai frecvent în general. Alegerea inteligentă a variabilei poate reduce semnificativ spațiul de căutare.
+\vspace{1em}
+
+Funcția \texttt{\_dpll} este componenta recursivă principală a algoritmului și implementează pașii esențiali ai metodei DPLL. Se începe prin propagarea literalilor unitari, iar dacă aceasta duce la un conflict, funcția se oprește și întoarce un rezultat negativ. Dacă formula este complet satisfăcută, adică nu mai conține nicio clauză, înseamnă că s-a găsit o soluție și se întoarce un rezultat pozitiv. În cazul în care formula nu este nici falsă, nici complet satisfăcută, se alege o variabilă folosind strategia definită anterior și se încearcă recursiv ambele valori posibile, adevărat și fals. Pentru fiecare atribuire se face o copie locală a dicționarului de variabile, iar clauzele care sunt deja satisfăcute de noua valoare sunt ignorate. Restul clauzelor sunt modificate prin eliminarea literalului atribuit și a opusului său, iar dacă o clauză devine goală în acest proces, se detectează un conflict și acea ramură este abandonată. Dacă apelul recursiv returnează succes, adică a fost găsită o atribuire care satisface toată formula, atunci se actualizează dicționarul principal și se confirmă că formula este satisfiabilă. Dacă niciuna dintre valorile testate nu duce la succes, funcția revine cu un rezultat negativ.
+\vspace{1em}
+
+Funcția \texttt{dpll} reprezintă interfața finală care primește o formulă CNF și returnează dacă ea este satisfiabilă, împreună cu o atribuire validă a variabilelor. Se pornește de la o formulă dată și se creează un dicționar gol pentru asignări, iar pentru siguranță, se face o copie a formulei pentru a evita efectele secundare. Se apelează funcția recursivă \texttt{\_dpll}, iar la final se returnează rezultatul satisfiabilității și dicționarul cu valorile variabilelor.
+\vspace{1em}
+
+Întregul cod formează o implementare completă și funcțională a algoritmului DPLL, care este una dintre cele mai importante metode folosite pentru a verifica satisfiabilitatea formularelor logice în domenii precum inteligența artificială, verificarea formală și teoria automatelor. Prin combinația de propagare a unităților, alegerea informată a variabilelor și căutare recursivă cu backtracking, algoritmul explorează inteligent spațiul de soluții pentru a determina dacă există o atribuire care face formula adevărată. Dacă dorești, putem analiza și un exemplu concret de formulă și să urmărim pas cu pas cum se aplică acest algoritm.
+\vspace{1em}
+
+\begin{lstlisting}[language=Python, caption={Implementarea algoritmului DPLL}]
+def _unit_propagate(cnf: CNF, assign: dict[int,bool]): 
+    changed = True
+    while changed:
+        changed = False
+        for c in cnf:
+            unassigned = [l for l in c if abs(l) not in assign]
+               if len(unassigned)==0 and not any ((l>0) ==assign. get(abs(l) ,False) for l in c): 
+                return False, cnf
+            if len(unassigned)==1:
+                lit = unassigned[0]
+                assign[abs(lit)] = lit>0
+                newcnf: CNF = []
+                for d in cnf:
+                    if lit in d:
+                        continue
+                    nd = {l for l in d if l != -lit}
+                    newcnf.append(nd)
+                cnf = newcnf
+                changed = True
+                break
+    return True, cnf
+
+def _pick_var_moms(cnf: CNF, assign: dict[int,bool]):
+    length2 = [c for c in cnf if len(c)==2]
+    counts = Counter(abs(l) for c in length2 for l in c if abs(l) not in assign)
+    if counts:
+        return counts.most_common(1)[0][0]
+    counts = Counter(abs(l) for c in cnf for l in c if abs(l) not in assign)
+    return counts.most_common(1)[0][0]
+
+def _dpll(cnf: CNF, assign: dict[int,bool]) -> bool:
+    ok, cnf = _unit_propagate(cnf, assign)
+    if not ok:
+        return False
+    if not cnf:
+        return True
+    var = _pick_var_moms(cnf, assign)
+    for val in (True, False):
+        assign_local = assign.copy()
+        assign_local[var] = val
+        newcnf = []
+        conflict = False
+        for c in cnf:
+            if (val and var in c) or (not val and -var in c):
+                continue
+            nc = {l for l in c if l not in (var if val else -var, -(var) if val else var)}
+            if not nc:
+                conflict = True
+                break
+            newcnf.append(nc)
+        if not conflict and _dpll(newcnf, assign_local):
+            assign.clear(); assign.update(assign_local)
+            return True
+    return False
+
+def dpll(cnf: CNF):
+    assign: dict[int,bool] = {}
+    sat = _dpll([c.copy() for c in cnf], assign)
+    return sat, assign
+\end{lstlisting}
+\subsection{Rezoluție}
+\hspace*{\parindent}Funcția \texttt{refutation} implementează metoda de refutare prin rezoluție în logica propozițională pentru a determina dacă o formulă exprimată în forma normală conjunctivă (CNF) este nesatisfiabilă. Această metodă se bazează pe aplicarea repetată a regulii rezoluției asupra perechilor de clauze până când fie se obține o clauză vidă, ceea ce indică o contradicție logică, deci formula nu este satisfiabilă, fie nu se mai pot obține clauze noi din combinații, ceea ce înseamnă că formula este satisfiabilă. Procesul începe prin convertirea listei inițiale de clauze în mulțimi imutabile de tip \texttt{frozenset}, deoarece acestea pot fi apoi stocate într-o mulțime \texttt{set()} care impune unicitate și permite comparații rapide. Se definește o mulțime \texttt{new} care va reține noile clauze obținute prin aplicarea rezoluției, astfel încât să nu fie adăugate duplicat în lista originală. Apoi, funcția intră într-o buclă infinită în care, pentru fiecare pereche de clauze, se caută literalul complementar, adică un literal pozitiv într-o clauză și opusul său negativ în cealaltă.
+\vspace{1em}
+
+Dacă se găsește o astfel de pereche, se aplică rezoluția: cele două clauze sunt unite, iar literalul contradictoriu este eliminat, rezultând o nouă clauză. Dacă, în urma acestei operații, rezultă o clauză vidă, înseamnă că prin combinații valide s-a ajuns la o contradicție și se returnează \texttt{False}, ceea ce semnalează că formula este nesatisfiabilă. În caz contrar, clauza rezultată este adăugată în mulțimea \texttt{new}. După ce s-au procesat toate perechile de clauze, funcția verifică dacă toate clauzele din \texttt{new} se regăsesc deja în lista existentă de clauze. Dacă da, înseamnă că nu s-au generat informații noi și formula este considerată satisfiabilă, deci funcția returnează \texttt{True}. Dacă nu, atunci clauzele noi sunt adăugate la lista celor existente și procesul se repetă până când se atinge unul dintre cele două cazuri terminale: fie apare clauza vidă, fie nu se mai pot obține clauze noi. Acest algoritm este o formă standard a metodei de rezoluție pentru demonstrarea nesatisfiabilității și este fundamentul multor algoritmi de inferență automată în logica propozițională.
+\vspace{1em}
+
+\begin{lstlisting}[language=Python, caption={Funcția \texttt{refutation} în Python}]
+def refutation(cnf: CNF) -> bool:
+    new = set()
+    clauses = [frozenset(c) for c in cnf]
+    while True:
+        for c1, c2 in itertools.combinations(clauses, 2):
+            for lit in c1:
+                if -lit in c2:
+                    res = frozenset(c1.union(c2) - {lit, -lit})
+                    if not res:
+                        return False
+                    new.add(res)
+        if new.issubset(set(clauses)):
+            return True
+        clauses.extend(new)
+\end{lstlisting}
+\section{ALTE METODE DE REZOLVARE}
+
+\hspace*{\parindent}Deși metodele clasice precum DPLL, DEDP și rezoluția constituie baza istorică și teoretică a soluționării SAT, progresul tehnologic și nevoile practice au condus la dezvoltarea unor metode alternative, mai eficiente sau mai specializate în anumite contexte. Aceste metode se încadrează în categorii diverse, de la algoritmi euristici și stocastici până la abordări inspirate din optimizare, satisfacție parțială și rețele neuronale.
+\vspace{1em}
+
+O categorie importantă o reprezintă algoritmii stocastici și aleatorii, cum ar fi WalkSAT, GSAT și ProbSAT. Acești algoritmi pornesc de la o atribuire aleatoare a valorilor pentru variabile și aplică o serie de modificări locale pentru a îmbunătăți satisfiabilitatea formulei. De exemplu, WalkSAT funcționează alegând o clauză falsificată și modificând valoarea unei variabile din acea clauză, ghidat de o combinație de euristici și pași aleatori. Aceste metode nu oferă garanția că vor găsi o soluție (sau că vor determina că nu există una), dar sunt extrem de eficiente în practică, în special pentru formule mari și dense.
+\vspace{1em}
+
+O altă direcție este reprezentată de algoritmii evolutivi și de tip metaheuristic, precum algoritmii genetici, recoptirea simulată (simulated annealing) și optimizarea prin roiuri de particule (particle swarm optimization). Acești algoritmi abordează SAT ca pe o problemă de optimizare și caută soluții prin simularea unor procese naturale precum selecția naturală, răcirea metalelor sau comportamentul colectiv al insectelor.
+\vspace{1em}
+
+Deși nu sunt dedicați strict problemelor logice, pot fi adaptați pentru a explora spațiul de soluții al unei formule SAT prin funcții de fitness bine alese. Ei sunt utili mai ales când se caută soluții aproximative sau în contexte în care există multe soluții posibile și se dorește găsirea uneia cât mai „bună” în sens practic.
+\vspace{1em}
+
+În plus, există metode bazate pe programare liniară mixtă și satisfiabilitate modulo teorii (SMT). În aceste cazuri, formula SAT este tradusă într-o problemă de optimizare liniară cu constrângeri sau într-o formulare mai complexă care include și constrângeri aritmetice, booleene sau de tip teorie de mulțimi. SMT extinde problema SAT prin adăugarea de teorii suplimentare (precum aritmetica numerelor întregi, listelor sau grafurilor), fiind utilizată în special în verificarea formală a software-ului și hardware-ului. Instrumentele moderne precum Z3 și CVC4 pot rezolva probleme mult mai generale decât SAT și oferă un cadru flexibil de exprimare a constrângerilor.
+\vspace{1em}
+
+O altă abordare modernă este bazată pe SAT solvers în stil \emph{conflict-driven clause learning (CDCL)}, care extind DPLL cu mecanisme sofisticate de învățare din conflicte și \emph{backtracking} non-cronologic. Deși derivă din DPLL, CDCL reprezintă o ramură atât de avansată încât poate fi considerată o metodă separată. Solvers precum MiniSAT, Glucose sau Lingeling utilizează CDCL împreună cu euristici dinamice, baze de date de clauze și mecanisme de restartare pentru a explora eficient spațiul de căutare.
+\vspace{1em}
+
+Un domeniu emergent este cel al rețelelor neuronale și învățării automate aplicate la SAT. Recent, au fost propuse modele de învățare profundă, cum ar fi \emph{Graph Neural Networks (GNNs)}, care învață să prezică soluții pentru formule SAT pe baza structurii grafurilor de variabile și clauze. Aceste metode nu oferă în general demonstrații riguroase de corectitudine, dar pot fi utile pentru a ghida căutarea într-un \emph{solver} clasic sau pentru a detecta rapid instanțe probabil nesatisfiabile.
+\vspace{1em}
+
+Deși metodele clasice precum DPLL și rezoluția rămân fundamentale, ecosistemul modern de tehnici SAT este bogat și divers, incluzând metode stocastice, euristici evolutive, programare liniară, sisteme hibride și chiar abordări bazate pe inteligență artificială. Alegerea metodei potrivite depinde în mare măsură de natura formulei, de dimensiunea sa și de cerințele aplicației concrete. Acest caracter interdisciplinar și adaptabil face ca problema satisfiabilității să fie nu doar centrală în teorie, ci și extrem de relevantă în numeroase aplicații practice.
+
+
+\subsection*{Concluzie}
+\hspace*{\parindent} În concluzie, problema satisfiabilității (SAT) reprezintă un subiect central în domeniul teoriei calculului și al inteligenței artificiale, cu aplicații esențiale în verificarea formală, planificare și rezolvarea problemelor combinatorii complexe. Lucrarea de față a oferit o analiză detaliată a metodelor tradiționale de rezolvare a SAT, cum ar fi algoritmul DPLL, tehnicile de rezoluție și DEDP, precum și prezentarea unui cod Python implementând aceste metode. 
+\vspace{1em}
+
+De asemena, am explorat și tehnici alternative și emergente, cum ar fi algoritmii stocastici, abordările evolutive, programarea liniară mixtă și utilizarea rețelelor neuronale pentru a îmbunătăți eficiența în soluționarea problemelor SAT.
+\vspace{1em}
+
+Studiul acestor tehnici a demonstrat că, în ciuda existenței unor soluții clasice eficiente, progresul tehnologic și necesitățile practice impun dezvoltarea unor metode mai flexibile și mai rapide, capabile să abordeze probleme de dimensiuni mari sau complexe. Astfel, problema satisfiabilității rămâne un domeniu activ de cercetare, cu aplicații diverse și relevante în multe domenii ale științei și tehnologiei.
+\newpage
+\begin{thebibliography}{99}
+\bibitem{SATProblem}
+Wikipedia, ``\textbf{Problema satisfiabilității booleene},'' \url{https://en.wikipedia.org/wiki/Boolean_satisfiability_problem?utm_source=chatgpt.com}.
+
+\bibitem{DPLLAlgorithm}
+Wikipedia, ``\textbf{DPLL Algorithm},'' \url{https://en.wikipedia.org/wiki/DPLL_algorithm?utm_source=chatgpt.com}.
+
+\bibitem{Resolution}
+\textit{SAT Association}, ``\textbf{Rezoluția în logica propozițională},'' \url{https://satassociation.org/articles/FAIA185-0003.pdf?utm_source=chatgpt.com}.
+
+\bibitem{WalkSAT}
+Wikipedia, ``\textbf{WalkSAT},'' \url{https://en.wikipedia.org/wiki/WalkSAT?utm_source=chatgpt.com}.
+
+\bibitem{GlucoseSAT}
+GitHub, ``\textbf{Glucose SAT Solver},'' \url{https://github.com/audemard/glucose?utm_source=chatgpt.com}.
+
+\bibitem{GraphNeuralNetwork}
+arxiv.org, ``\textbf{SAT-GATv2: O rețea neuronală bazată pe atenție dinamică pentru satisfiabilitatea booleeană},'' \url{https://arxiv.org/abs/2405.11024?utm_source=chatgpt.com}.
+
+\bibitem{YinYang}
+GitHub, ``\textbf{Yin-Yang: Un cadru de fuzzing pentru testarea solverelor SMT},'' \url{https://github.com/testsmt/yinyang?utm_source=chatgpt.com}.
+
+\end{thebibliography}
+
+\end{document}
